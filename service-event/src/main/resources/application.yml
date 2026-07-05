@@ -4,6 +4,26 @@ spring:
   grpc:
     server:
       port: 9091
+      health:
+        enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:15432/event_db
+    username: betting
+    password: betting
+  jpa:
+    hibernate:
+      ddl-auto: validate   # 스키마는 Flyway가 만들고, Hibernate는 매핑 검증만
+    open-in-view: false
+  flyway:
+    enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Jackson 3 기반 (Boot 4.1/Spring 7은 Jackson 3 사용; JsonSerializer는 Jackson 2 레거시)
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
 
 server:
   port: 8081

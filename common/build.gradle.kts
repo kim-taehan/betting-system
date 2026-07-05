@@ -2,11 +2,10 @@ plugins {
     `java-library`
 }
 
+// 서비스가 공유하는 proto 스텁 + gRPC 공통 런타임을 re-export 한다.
+// (공용 인터셉터/에러 매핑 등 공유 코드는 이후 여기에 추가한다.)
 dependencies {
     api(platform(libs.spring.grpc.bom))
     api(project(":proto"))
-    api(libs.grpc.services) // health service impl shared by all gRPC services
-
-    // @AutoConfiguration / @Bean 를 컴파일하기 위한 최소 의존성 (런타임은 서비스가 스타터로 제공)
-    compileOnly("org.springframework.boot:spring-boot-autoconfigure:${libs.versions.springBoot.get()}")
+    api(libs.grpc.services)
 }

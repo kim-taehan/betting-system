@@ -4,6 +4,8 @@ spring:
   grpc:
     server:
       port: 9092
+      health:
+        enabled: true
 
 server:
   port: 8082
