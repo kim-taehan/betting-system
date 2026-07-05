@@ -1,4 +1,4 @@
-# 스포츠 베팅 시스템 (학습용) — 설계 문서
+zk# 스포츠 베팅 시스템 (학습용) — 설계 문서
 
 - **작성일:** 2026-07-05
 - **상태:** 승인됨 (구현 계획 작성 대기)
@@ -76,9 +76,9 @@ betting-system/
 | 서비스 | 주요 인터페이스 | Kafka 발행 | Kafka 구독 | 소유 데이터 |
 |--------|-----------|-----------|-----------|------------|
 | **BFF** | REST: `GET /api/events`, `POST /api/bets`, `GET /api/bets`, `GET /api/wallet/{userId}` (→ 내부 gRPC 호출·조합) | — | — | 없음(무상태) |
-| **Event/Odds** | `ListEvents`, `GetOdds`, `StreamOdds`(server-streaming) | `OddsChanged`, `EventSettled` | — | 경기, 마켓, 배당 |
+| **Event/Odds** | `ListEvents`, `GetOdds`, `StreamOdds`(server-streaming) | `OddsChanged`, `EventSettled` | `OddsAdjustment`(Risk 신호로 배당 조정) | 경기, 마켓, 배당 |
 | **Betting** | `PlaceBet`, `GetBet`, `ListBets` | `BetPlaced`, `BetSettled` | `EventSettled`(정산), `OddsChanged` | 베팅 슬립, 상태 |
-| **Risk** | `CheckBet`(동기 승인/거절), `GetExposure` | `RiskAlert` | `BetPlaced`(익스포저 집계) | 한도, 익스포저 |
+| **Risk** | `CheckBet`(하드 한도 동기 승인/거절), `GetExposure` | `RiskAlert`, `OddsAdjustment` | `BetPlaced`(익스포저 집계·이상탐지) | 한도, 익스포저 |
 | **Wallet** | `Debit`, `Credit`, `GetBalance` | `WalletChanged` | `BetSettled`(당첨금 지급) | 계정 잔액, 원장 |
 | **Ops/Admin** | `GetSystemStatus`, `ListAlerts` | — | 전 이벤트(집계) | 집계 스냅샷 |
 
@@ -86,6 +86,11 @@ betting-system/
 - `StreamOdds` → gRPC server-streaming.
 - `PlaceBet` 경로 → 동기 gRPC 오케스트레이션 + 분산추적.
 - 정산 경로 → Kafka 기반 이벤트 전파(최종 일관성).
+- **위험관리(혼합)** → 동기 게이트 + 비동기 감시가 한 서비스에 공존.
+
+**위험관리 모델 (혼합):** Risk는 두 역할을 동시에 수행한다.
+- **동기(gRPC `CheckBet`)** — 하드 한도(사용자·마켓·이벤트별 최대 익스포저 등)를 베팅 접수 순간 검사해 즉시 승인/거절. 정합성 보장.
+- **비동기(Kafka `BetPlaced` 구독)** — 누적 익스포저 집계 + 이상 패턴 탐지. 결과로 `RiskAlert`(Ops 모니터링용)와 `OddsAdjustment`(Event/Odds가 구독해 배당을 낮춤/올림) 발행. 베팅을 사후 취소하지는 않음(그건 완전 Saga 방식이며 범위 밖).
 
 ## 6. 핵심 데이터 흐름
 
@@ -104,6 +109,15 @@ Event/Odds: 경기 종료 → Kafka `EventSettled` 발행
   Betting 구독 → 승/패 판정 → 베팅 상태 갱신 → `BetSettled` 발행
     Wallet 구독 → 당첨금 Credit
     Ops 구독 → 통계 갱신
+```
+
+**위험관리 (혼합: 동기 게이트 + 비동기 감시):**
+```
+[동기] 베팅 접수 시 Betting ─CheckBet(gRPC)─▶ Risk : 하드 한도 초과면 즉시 거절
+[비동기] Betting ─Kafka BetPlaced─▶ Risk
+           Risk: 익스포저 누적 집계 + 이상 패턴 탐지
+             ├─ 위험 감지 → `RiskAlert` 발행 → Ops 구독(모니터링/알림)
+             └─ 배당 조정 필요 → `OddsAdjustment` 발행 → Event/Odds 구독(배당 조정)
 ```
 
 **실패/보상 정책(학습 단순화):** `PlaceBet`에서 Risk 승인 후 Wallet Debit 실패 시 베팅을 저장하지 않고 거절 응답. Debit 성공 후 저장 실패 같은 드문 경우는 보상 트랜잭션(Wallet Credit 롤백)으로 처리. 분산 트랜잭션(2PC)은 도입하지 않음.
@@ -134,8 +148,8 @@ Event/Odds: 경기 종료 → Kafka `EventSettled` 발행
    → 검증: `PlaceBet` 전체 흐름 성공, Jaeger에 단일 trace 연결.
 5. **BFF + 정적 화면**.
    → 검증: 브라우저에서 경기 목록 보기 / 베팅 걸기 / 잔액·내 베팅 조회 동작, Browser→BFF→백엔드가 하나의 trace로 연결.
-6. **Risk**.
-   → 검증: 한도 초과 베팅 거절, `BetPlaced` 기반 익스포저 집계.
+6. **Risk (혼합)**.
+   → 검증: (동기) 하드 한도 초과 베팅 즉시 거절, (비동기) `BetPlaced` 집계·이상탐지 → `RiskAlert`/`OddsAdjustment` 발행, Event/Odds가 배당 조정.
 7. **Ops/Admin + Grafana 대시보드**.
    → 검증: `GetSystemStatus` 조회, Grafana에서 핵심 메트릭 확인.
 
