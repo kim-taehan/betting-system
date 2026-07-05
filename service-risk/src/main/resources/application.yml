@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: risk-service
+  grpc:
+    server:
+      port: 9093
+
+server:
+  port: 8083
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: bff-service
+  # gRPC 클라이언트 채널은 Phase 4(BFF 구현)에서 백엔드 스텁과 함께 설정한다.
+
+server:
+  port: 8086  # 호스트 8080 점유 → 8086 (BFF 진입점)
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always

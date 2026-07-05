@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: wallet-service
+  grpc:
+    server:
+      port: 9094
+
+server:
+  port: 8084
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always

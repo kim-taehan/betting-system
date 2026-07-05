@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  # 서비스는 호스트에서 실행되므로 host.docker.internal 로 스크레이프한다.
+  - job_name: betting-services
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8081  # event
+          - host.docker.internal:8082  # betting
+          - host.docker.internal:8083  # risk
+          - host.docker.internal:8084  # wallet
+          - host.docker.internal:8085  # ops
+          - host.docker.internal:8086  # bff
+
+  - job_name: otel-collector
+    static_configs:
+      - targets:
+          - otel-collector:8888  # collector 자체 메트릭

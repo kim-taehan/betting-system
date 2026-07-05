@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package betting.common.v1;
+
+option java_multiple_files = true;
+option java_package = "com.example.betting.proto.common.v1";
+option java_outer_classname = "CommonProto";
+
+// 금액. 소수점 오차를 피하기 위해 최소 화폐 단위(minor unit)의 정수로 표현.
+// 예: 12,300원 → currency="KRW", amount_minor=12300
+message Money {
+  string currency = 1;
+  int64 amount_minor = 2;
+}

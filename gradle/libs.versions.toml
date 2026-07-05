@@ -1,0 +1,29 @@
+[versions]
+springBoot = "4.1.0"
+springDependencyManagement = "1.1.7"
+springGrpc = "1.0.3"
+protobufPlugin = "0.9.5"
+protobuf = "4.33.4"
+grpc = "1.77.1"
+
+[libraries]
+# Spring gRPC BOM — manages io.grpc, protobuf-java, spring-grpc-* versions
+spring-grpc-bom = { module = "org.springframework.grpc:spring-grpc-dependencies", version.ref = "springGrpc" }
+spring-grpc-server-starter = { module = "org.springframework.grpc:spring-grpc-spring-boot-starter" }
+spring-grpc-client-starter = { module = "org.springframework.grpc:spring-grpc-client-spring-boot-starter" }
+spring-grpc-test = { module = "org.springframework.grpc:spring-grpc-test" }
+
+# gRPC / protobuf runtime (versions from BOM)
+grpc-stub = { module = "io.grpc:grpc-stub" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf" }
+grpc-services = { module = "io.grpc:grpc-services" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java" }
+
+# codegen artifacts (need explicit versions for protobuf gradle plugin)
+protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
+protoc-gen-grpc-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
