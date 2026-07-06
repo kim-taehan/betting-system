@@ -7,6 +7,33 @@ spring:
       health:
         enabled: true
 
+  datasource:
+    url: jdbc:postgresql://localhost:15432/wallet_db
+    username: betting
+    password: betting
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+    consumer:
+      group-id: wallet-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      properties:
+        # 발행자의 타입 헤더를 무시하고 항상 이 타입으로 역직렬화 (서비스 간 클래스 결합 회피)
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.example.betting.wallet.messaging.BetSettledEvent
+        spring.json.trusted.packages: "*"
+
 server:
   port: 8084
 

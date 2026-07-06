@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package betting.wallet.v1;
+
+import "betting/common/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.example.betting.proto.wallet.v1";
+option java_outer_classname = "WalletProto";
+
+// 잔액 차감. 잔액 부족 시 FAILED_PRECONDITION. idempotency_key 로 중복 요청 방지.
+message DebitRequest {
+  string user_id = 1;
+  betting.common.v1.Money amount = 2;
+  string idempotency_key = 3;
+  string reference = 4;            // 예: bet id
+}
+
+// 잔액 지급.
+message CreditRequest {
+  string user_id = 1;
+  betting.common.v1.Money amount = 2;
+  string idempotency_key = 3;
+  string reference = 4;
+}
+
+message TxnResponse {
+  string user_id = 1;
+  betting.common.v1.Money balance = 2;   // 처리 후 잔액
+  string ledger_entry_id = 3;
+}
+
+message GetBalanceRequest {
+  string user_id = 1;
+}
+
+message GetBalanceResponse {
+  string user_id = 1;
+  betting.common.v1.Money balance = 2;
+}
+
+service WalletService {
+  rpc Debit(DebitRequest) returns (TxnResponse);
+  rpc Credit(CreditRequest) returns (TxnResponse);
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+}

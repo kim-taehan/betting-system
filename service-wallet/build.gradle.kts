@@ -14,6 +14,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
+    // 영속성 (Boot 4.x: Flyway 자동구성은 spring-boot-flyway 모듈)
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-flyway")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    runtimeOnly("org.postgresql:postgresql")
+
+    // 메시징 (Boot 4.x: spring-boot-kafka 모듈)
+    implementation("org.springframework.boot:spring-boot-kafka")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(libs.spring.grpc.test)
 }
