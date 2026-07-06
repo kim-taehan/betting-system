@@ -41,11 +41,25 @@ public class OddsUpdateService {
         double newOdds = Math.max(MIN_ODDS, Math.round(selection.getOdds() * factor * 100.0) / 100.0);
         selection.setOdds(newOdds);
 
-        return Optional.of(new OddsChangedEvent(
+        return Optional.of(toChange(selection, newOdds));
+    }
+
+    /** 리스크 신호(OddsAdjustment)로 특정 셀렉션 배당을 factor 만큼 조정. */
+    @Transactional
+    public Optional<OddsChangedEvent> adjustOdds(String selectionId, double factor) {
+        return selectionRepository.findById(selectionId).map(selection -> {
+            double newOdds = Math.max(MIN_ODDS, Math.round(selection.getOdds() * factor * 100.0) / 100.0);
+            selection.setOdds(newOdds);
+            return toChange(selection, newOdds);
+        });
+    }
+
+    private static OddsChangedEvent toChange(SelectionEntity selection, double newOdds) {
+        return new OddsChangedEvent(
                 selection.getMarket().getEvent().getId(),
                 selection.getMarket().getId(),
                 selection.getId(),
                 newOdds,
-                Instant.now().toEpochMilli()));
+                Instant.now().toEpochMilli());
     }
 }

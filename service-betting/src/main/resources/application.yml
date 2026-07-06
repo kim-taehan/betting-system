@@ -14,6 +14,9 @@ spring:
         wallet:
           address: "static://localhost:9094"
           negotiation-type: plaintext
+        risk:
+          address: "static://localhost:9093"
+          negotiation-type: plaintext
 
   datasource:
     url: jdbc:postgresql://localhost:15432/betting_db

@@ -7,6 +7,9 @@ import com.example.betting.proto.event.v1.GetOddsRequest;
 import com.example.betting.proto.event.v1.GetOddsResponse;
 import com.example.betting.proto.event.v1.Market;
 import com.example.betting.proto.event.v1.Selection;
+import com.example.betting.proto.risk.v1.CheckBetRequest;
+import com.example.betting.proto.risk.v1.CheckBetResponse;
+import com.example.betting.proto.risk.v1.RiskServiceGrpc;
 import com.example.betting.proto.wallet.v1.CreditRequest;
 import com.example.betting.proto.wallet.v1.DebitRequest;
 import com.example.betting.proto.wallet.v1.WalletServiceGrpc;
@@ -27,13 +30,16 @@ public class BettingService {
     private static final Logger log = LoggerFactory.getLogger(BettingService.class);
 
     private final EventServiceGrpc.EventServiceBlockingStub eventStub;
+    private final RiskServiceGrpc.RiskServiceBlockingStub riskStub;
     private final WalletServiceGrpc.WalletServiceBlockingStub walletStub;
     private final BetStore betStore;
 
     public BettingService(EventServiceGrpc.EventServiceBlockingStub eventStub,
+                          RiskServiceGrpc.RiskServiceBlockingStub riskStub,
                           WalletServiceGrpc.WalletServiceBlockingStub walletStub,
                           BetStore betStore) {
         this.eventStub = eventStub;
+        this.riskStub = riskStub;
         this.walletStub = walletStub;
         this.betStore = betStore;
     }
@@ -43,7 +49,14 @@ public class BettingService {
         // 1) Event.GetOdds (gRPC) — 존재 검증 + 접수 시점 배당 확보
         double odds = lookupOdds(eventId, marketId, selectionId);
 
-        // 2) Risk.CheckBet — Phase 5에서 연결. 그 전까지는 스텁으로 통과.
+        // 2) Risk.CheckBet (gRPC 동기 게이트) — 하드 한도 초과면 거절
+        CheckBetResponse risk = riskStub.checkBet(CheckBetRequest.newBuilder()
+                .setUserId(userId).setEventId(eventId).setMarketId(marketId)
+                .setSelectionId(selectionId).setStake(money(currency, stakeMinor))
+                .build());
+        if (!risk.getApproved()) {
+            throw new BetRejectedException(risk.getReason());
+        }
 
         String betId = UUID.randomUUID().toString();
 

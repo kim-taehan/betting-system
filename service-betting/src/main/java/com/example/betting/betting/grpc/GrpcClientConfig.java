@@ -1,6 +1,7 @@
 package com.example.betting.betting.grpc;
 
 import com.example.betting.proto.event.v1.EventServiceGrpc;
+import com.example.betting.proto.risk.v1.RiskServiceGrpc;
 import com.example.betting.proto.wallet.v1.WalletServiceGrpc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,5 +22,10 @@ public class GrpcClientConfig {
     @Bean
     WalletServiceGrpc.WalletServiceBlockingStub walletStub(GrpcChannelFactory channels) {
         return WalletServiceGrpc.newBlockingStub(channels.createChannel("wallet"));
+    }
+
+    @Bean
+    RiskServiceGrpc.RiskServiceBlockingStub riskStub(GrpcChannelFactory channels) {
+        return RiskServiceGrpc.newBlockingStub(channels.createChannel("risk"));
     }
 }

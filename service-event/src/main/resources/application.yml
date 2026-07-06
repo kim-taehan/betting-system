@@ -24,6 +24,15 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       # Jackson 3 기반 (Boot 4.1/Spring 7은 Jackson 3 사용; JsonSerializer는 Jackson 2 레거시)
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+    consumer:
+      group-id: event-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.example.betting.event.messaging.OddsAdjustmentEvent
+        spring.json.trusted.packages: "*"
 
 server:
   port: 8081

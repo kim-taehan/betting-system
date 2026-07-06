@@ -7,6 +7,38 @@ spring:
       health:
         enabled: true
 
+  datasource:
+    url: jdbc:postgresql://localhost:15432/risk_db
+    username: betting
+    password: betting
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+    consumer:
+      group-id: risk-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.example.betting.risk.messaging.BetPlacedEvent
+        spring.json.trusted.packages: "*"
+
+# 하드 한도 (동기 게이트) + 이상탐지 임계 (비동기)
+risk:
+  max-single-stake: 50000        # 단건 최대 스테이크
+  max-user-exposure: 150000      # 유저 누적 최대 익스포저
+  selection-alert-threshold: 20000  # 셀렉션 익스포저 이 값 초과 시 배당조정/알림
+
 server:
   port: 8083
 
@@ -18,3 +50,9 @@ management:
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces

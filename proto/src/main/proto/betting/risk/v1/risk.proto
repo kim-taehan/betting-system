@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package betting.risk.v1;
+
+import "betting/common/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.example.betting.proto.risk.v1";
+option java_outer_classname = "RiskProto";
+
+// 동기 하드 한도 체크. 베팅 접수 순간 Betting 이 호출한다.
+message CheckBetRequest {
+  string user_id = 1;
+  string event_id = 2;
+  string market_id = 3;
+  string selection_id = 4;
+  betting.common.v1.Money stake = 5;
+}
+
+message CheckBetResponse {
+  bool approved = 1;
+  string reason = 2;   // 거절 시 사유
+}
+
+message GetExposureRequest {
+  string user_id = 1;
+}
+
+message GetExposureResponse {
+  string user_id = 1;
+  betting.common.v1.Money total_staked = 2;   // 누적(집계) 익스포저
+}
+
+service RiskService {
+  rpc CheckBet(CheckBetRequest) returns (CheckBetResponse);
+  rpc GetExposure(GetExposureRequest) returns (GetExposureResponse);
+}
