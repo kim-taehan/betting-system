@@ -35,6 +35,10 @@ public class EventEntity {
     protected EventEntity() {
     }
 
+    public void markSettled() {
+        this.status = EventStatus.SETTLED;
+    }
+
     public String getId() {
         return id;
     }

@@ -2,6 +2,7 @@ package com.example.betting.event.grpc;
 
 import com.example.betting.event.domain.EventStatus;
 import com.example.betting.event.service.EventQueryService;
+import com.example.betting.event.service.EventSettleService;
 import com.example.betting.proto.event.v1.Event;
 import com.example.betting.proto.event.v1.EventServiceGrpc;
 import com.example.betting.proto.event.v1.GetOddsRequest;
@@ -9,6 +10,8 @@ import com.example.betting.proto.event.v1.GetOddsResponse;
 import com.example.betting.proto.event.v1.ListEventsRequest;
 import com.example.betting.proto.event.v1.ListEventsResponse;
 import com.example.betting.proto.event.v1.OddsUpdate;
+import com.example.betting.proto.event.v1.SettleEventRequest;
+import com.example.betting.proto.event.v1.SettleEventResponse;
 import com.example.betting.proto.event.v1.StreamOddsRequest;
 import io.grpc.Status;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -20,10 +23,13 @@ public class EventGrpcService extends EventServiceGrpc.EventServiceImplBase {
 
     private final EventQueryService queryService;
     private final OddsBroadcaster broadcaster;
+    private final EventSettleService settleService;
 
-    public EventGrpcService(EventQueryService queryService, OddsBroadcaster broadcaster) {
+    public EventGrpcService(EventQueryService queryService, OddsBroadcaster broadcaster,
+                            EventSettleService settleService) {
         this.queryService = queryService;
         this.broadcaster = broadcaster;
+        this.settleService = settleService;
     }
 
     @Override
@@ -46,6 +52,19 @@ public class EventGrpcService extends EventServiceGrpc.EventServiceImplBase {
                 () -> responseObserver.onError(Status.NOT_FOUND
                         .withDescription("event not found: " + request.getEventId())
                         .asRuntimeException()));
+    }
+
+    @Override
+    public void settleEvent(SettleEventRequest request, StreamObserver<SettleEventResponse> responseObserver) {
+        try {
+            settleService.settle(request.getEventId(), request.getMarketId(), request.getWinningSelectionId());
+            Event event = queryService.getEvent(request.getEventId())
+                    .orElseThrow(() -> new IllegalArgumentException("event not found: " + request.getEventId()));
+            responseObserver.onNext(SettleEventResponse.newBuilder().setEvent(event).build());
+            responseObserver.onCompleted();
+        } catch (IllegalArgumentException ex) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription(ex.getMessage()).asRuntimeException());
+        }
     }
 
     @Override

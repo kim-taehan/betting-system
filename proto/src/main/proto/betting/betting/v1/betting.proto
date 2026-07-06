@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package betting.betting.v1;
+
+import "betting/common/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.example.betting.proto.betting.v1";
+option java_outer_classname = "BettingProto";
+
+enum BetStatus {
+  BET_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  WON = 2;
+  LOST = 3;
+  VOID = 4;
+}
+
+message BetSlip {
+  string id = 1;
+  string user_id = 2;
+  string event_id = 3;
+  string market_id = 4;
+  string selection_id = 5;
+  .betting.common.v1.Money stake = 6;
+  double odds = 7;                     // 접수 시점 배당
+  BetStatus status = 8;
+  .betting.common.v1.Money payout = 9;  // 정산 후 지급액 (WON 이면 stake*odds)
+  int64 placed_at_epoch_ms = 10;
+}
+
+message PlaceBetRequest {
+  string user_id = 1;
+  string event_id = 2;
+  string market_id = 3;
+  string selection_id = 4;
+  .betting.common.v1.Money stake = 5;
+}
+
+message PlaceBetResponse {
+  BetSlip bet = 1;
+}
+
+message GetBetRequest {
+  string bet_id = 1;
+}
+
+message GetBetResponse {
+  BetSlip bet = 1;
+}
+
+message ListBetsRequest {
+  string user_id = 1;
+}
+
+message ListBetsResponse {
+  repeated BetSlip bets = 1;
+}
+
+service BettingService {
+  rpc PlaceBet(PlaceBetRequest) returns (PlaceBetResponse);
+  rpc GetBet(GetBetRequest) returns (GetBetResponse);
+  rpc ListBets(ListBetsRequest) returns (ListBetsResponse);
+}

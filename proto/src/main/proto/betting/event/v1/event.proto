@@ -59,6 +59,17 @@ message StreamOddsRequest {
   string event_id = 1;
 }
 
+// 경기 정산 트리거(관리 액션). 승리 셀렉션을 정하고 EventSettled 를 발행한다.
+message SettleEventRequest {
+  string event_id = 1;
+  string market_id = 2;
+  string winning_selection_id = 3;
+}
+
+message SettleEventResponse {
+  Event event = 1;
+}
+
 // 배당 변동 1건
 message OddsUpdate {
   string event_id = 1;
@@ -73,4 +84,6 @@ service EventService {
   rpc GetOdds(GetOddsRequest) returns (GetOddsResponse);
   // server-streaming: 배당 변동을 계속 밀어준다
   rpc StreamOdds(StreamOddsRequest) returns (stream OddsUpdate);
+  // 경기 정산 트리거 → EventSettled 발행
+  rpc SettleEvent(SettleEventRequest) returns (SettleEventResponse);
 }

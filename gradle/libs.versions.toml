@@ -7,8 +7,17 @@ protobuf = "4.33.4"
 grpc = "1.77.1"
 
 [libraries]
+# Spring Boot BOM — manages Boot/Micrometer/OTel versions (for :common which has no boot plugin)
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
+
 # Spring gRPC BOM — manages io.grpc, protobuf-java, spring-grpc-* versions
 spring-grpc-bom = { module = "org.springframework.grpc:spring-grpc-dependencies", version.ref = "springGrpc" }
+
+# 분산추적 (버전은 Boot BOM 이 관리)
+micrometer-tracing-bridge-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel" }
+otel-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
+spring-boot-opentelemetry = { module = "org.springframework.boot:spring-boot-opentelemetry" }
+spring-boot-micrometer-tracing = { module = "org.springframework.boot:spring-boot-micrometer-tracing" }
 spring-grpc-server-starter = { module = "org.springframework.grpc:spring-grpc-spring-boot-starter" }
 spring-grpc-client-starter = { module = "org.springframework.grpc:spring-grpc-client-spring-boot-starter" }
 spring-grpc-test = { module = "org.springframework.grpc:spring-grpc-test" }

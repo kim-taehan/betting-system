@@ -6,6 +6,40 @@ spring:
       port: 9092
       health:
         enabled: true
+    client:
+      channels:
+        event:
+          address: "static://localhost:9091"
+          negotiation-type: plaintext
+        wallet:
+          address: "static://localhost:9094"
+          negotiation-type: plaintext
+
+  datasource:
+    url: jdbc:postgresql://localhost:15432/betting_db
+    username: betting
+    password: betting
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+    consumer:
+      group-id: betting-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.example.betting.betting.messaging.EventSettledEvent
+        spring.json.trusted.packages: "*"
 
 server:
   port: 8082
@@ -18,3 +52,9 @@ management:
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
