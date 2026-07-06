@@ -6,7 +6,8 @@ plugins {
 
 dependencies {
     implementation(platform(libs.spring.grpc.bom))
-    implementation(project(":proto")) // 클라이언트 스텁 (헬스 서버 impl 불필요하므로 :common 대신 :proto)
+    // common: proto 스텁 + 분산추적 스택 (BFF 스팬도 trace 에 포함)
+    implementation(project(":common"))
 
     implementation(libs.spring.grpc.client.starter)
 
