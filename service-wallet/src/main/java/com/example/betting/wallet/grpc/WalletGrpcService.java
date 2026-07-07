@@ -13,26 +13,36 @@ import com.example.betting.wallet.service.WalletService;
 import com.example.betting.wallet.service.WalletService.TxnResult;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Service;
 
 @Service
 public class WalletGrpcService extends WalletServiceGrpc.WalletServiceImplBase {
 
     private final WalletService walletService;
+    private final MeterRegistry meter;
 
-    public WalletGrpcService(WalletService walletService) {
+    public WalletGrpcService(WalletService walletService, MeterRegistry meter) {
         this.walletService = walletService;
+        this.meter = meter;
     }
 
     @Override
     public void debit(DebitRequest request, StreamObserver<TxnResponse> responseObserver) {
         handle(responseObserver, () -> {
-            TxnResult result = walletService.debit(
-                    request.getUserId(),
-                    request.getAmount().getAmountMinor(),
-                    request.getIdempotencyKey(),
-                    request.getReference());
-            return txnResponse(result);
+            try {
+                TxnResult result = walletService.debit(
+                        request.getUserId(),
+                        request.getAmount().getAmountMinor(),
+                        request.getIdempotencyKey(),
+                        request.getReference());
+                meter.counter("wallet.debit", "result", "ok").increment();
+                return txnResponse(result);
+            } catch (InsufficientFundsException ex) {
+                // Wallet 실패율 메트릭 (Grafana)
+                meter.counter("wallet.debit", "result", "insufficient").increment();
+                throw ex;
+            }
         });
     }
 

@@ -73,8 +73,23 @@ open http://localhost:3001      # Grafana
 open http://localhost:16686     # Jaeger
 ```
 
-## 구현 진행
+## 구현 진행 (전 Phase 완료)
 
-- **Phase 0 (완료):** 모노레포 + 인프라 + 빈 서비스 6개(gRPC 헬스/리플렉션). 통신·관측성 뼈대.
-- Phase 1~7: 스펙의 구현 순서 참고 (Event → Wallet → Betting → BFF+화면 → Risk → Ops).
-  비즈니스는 "뼈대 우선" 전략에 따라 처음엔 단순하게, 이후 각 서비스 내부만 확장.
+- **Phase 0:** 모노레포 + 인프라 + 빈 서비스 6개(gRPC 헬스/리플렉션).
+- **Phase 1:** Event/Odds — ListEvents/GetOdds/StreamOdds(server-streaming), Kafka `OddsChanged`.
+- **Phase 2:** Wallet — Debit/Credit/GetBalance, 멱등키, `BetSettled` 구독→Credit.
+- **Phase 3:** Betting 오케스트레이터 — PlaceBet(Event/Wallet/Risk 동기 gRPC), 정산(EventSettled→BetSettled), **분산추적(Jaeger 단일 trace)**.
+- **Phase 4:** BFF + 화면 — REST(`/api/dashboard` 3콜 조합, `/api/bets`) + 정적 UI. → http://localhost:8086
+- **Phase 5:** Risk 혼합 — 동기 CheckBet 하드한도 + 비동기 익스포저 집계/이상탐지→OddsAdjustment(배당↓)/RiskAlert.
+- **Phase 6:** Ops/Admin — 전 이벤트 집계, GetSystemStatus/ListAlerts, **Grafana 운영 대시보드**.
+
+### 화면 / 대시보드
+- 베팅 화면(BFF): http://localhost:8086
+- Grafana 대시보드: http://localhost:3001/d/betting-ops (처리량·Risk 거절율·Wallet 실패율·gRPC 지연)
+- Jaeger 분산추적: http://localhost:16686
+
+### 경기 정산 (운영자)
+```bash
+grpcurl -plaintext -d '{"event_id":"evt-3","market_id":"mkt-3","winning_selection_id":"sel-7"}' \
+  localhost:9091 betting.event.v1.EventService/SettleEvent
+```

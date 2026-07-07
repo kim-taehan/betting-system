@@ -8,6 +8,7 @@ import com.example.betting.risk.domain.UserExposureRepository;
 import com.example.betting.risk.messaging.BetPlacedEvent;
 import com.example.betting.risk.messaging.OddsAdjustmentEvent;
 import com.example.betting.risk.messaging.RiskAlertEvent;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,20 +30,30 @@ public class RiskService {
     private final SelectionExposureRepository selectionExposureRepository;
     private final RiskProperties props;
     private final ApplicationEventPublisher eventPublisher;
+    private final MeterRegistry meter;
 
     public RiskService(UserExposureRepository userExposureRepository,
                        SelectionExposureRepository selectionExposureRepository,
                        RiskProperties props,
-                       ApplicationEventPublisher eventPublisher) {
+                       ApplicationEventPublisher eventPublisher,
+                       MeterRegistry meter) {
         this.userExposureRepository = userExposureRepository;
         this.selectionExposureRepository = selectionExposureRepository;
         this.props = props;
         this.eventPublisher = eventPublisher;
+        this.meter = meter;
     }
 
     /** 동기 하드 한도 게이트. */
     @Transactional(readOnly = true)
     public CheckResult checkBet(String userId, long stakeMinor) {
+        CheckResult result = evaluate(userId, stakeMinor);
+        // Risk 거절율 메트릭 (Grafana)
+        meter.counter("risk.checks", "result", result.approved() ? "approved" : "rejected").increment();
+        return result;
+    }
+
+    private CheckResult evaluate(String userId, long stakeMinor) {
         if (stakeMinor > props.maxSingleStake()) {
             return CheckResult.reject("단건 스테이크 한도 초과 (max " + props.maxSingleStake() + ")");
         }

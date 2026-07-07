@@ -6,6 +6,43 @@ spring:
       port: 9095
       health:
         enabled: true
+    client:
+      channels:
+        event:
+          address: "static://localhost:9091"
+          negotiation-type: plaintext
+        betting:
+          address: "static://localhost:9092"
+          negotiation-type: plaintext
+        risk:
+          address: "static://localhost:9093"
+          negotiation-type: plaintext
+        wallet:
+          address: "static://localhost:9094"
+          negotiation-type: plaintext
+
+  datasource:
+    url: jdbc:postgresql://localhost:15432/ops_db
+    username: betting
+    password: betting
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false   # 소비 레코드가 발행 필드의 부분집합이어도 OK
+
+  kafka:
+    bootstrap-servers: localhost:19092
+    consumer:
+      group-id: ops-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 server:
   port: 8085
@@ -18,3 +55,9 @@ management:
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
